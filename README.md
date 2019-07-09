@@ -1,0 +1,3 @@
+# tribwalwars-bot
+
+Em construção
