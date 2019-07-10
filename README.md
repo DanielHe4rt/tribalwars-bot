@@ -33,6 +33,30 @@ Entering the command below will begin to download the dependencies:
 composer install
 ```
 <br>
+With everything set up, you can run the game using the command below (Remember to use this command on the project folder):
+
+```
+php artisan game:start
+```
+
+<p>Running the command, you will be asked for your game credencials:</p>
+
+<img src="https://i.imgur.com/mU6r1Ll.png"><br>
+
+
+<p>Now you need to choose which "World" you want to connect:</p>
+
+<img src="https://i.imgur.com/heYYMyc.png"><br>
+
+<p>PS: Worlds with "JOIN" means you already have an village created.</p>
+
+<p>After the world is selected, you will see your entire village information inside the console.</p>
+
+
+<img src="https://i.imgur.com/9TNgSsk.png"><br>
+
+<p>This bot will only work on the brazilian server for now because there is a lot of stuff to do before I release something useful for the global players.</p>
+
 
 
 ## :mailbox_with_mail: License 
