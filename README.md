@@ -15,7 +15,7 @@ The idea is to have the manual mode (where the player can execute all the action
 
 ## :computer: Technologies
 
- chose to use Lumen because I work with the framework on a daily basis, so it makes a lot easier.
+I chose to use Lumen because I work with the framework on a daily basis, so it makes a lot easier. Here is the most important about the code: 
 
 - Artisan Console<br>
 Used to make the interface and display all the game data on the console. Basically the I/O of the application.
