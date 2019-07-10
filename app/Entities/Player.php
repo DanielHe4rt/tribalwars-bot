@@ -33,7 +33,6 @@ class Player
     public function __construct(TWService $data)
     {
         $this->data = $data;
-        dd($this->data->getData());
         $info = $this->data->getData()['game_data'];
         $startTime = Carbon::createFromTimestamp($info['player']['date_started'],'America/Sao_Paulo');
         $this->id = $info['player']['id'];
@@ -45,10 +44,7 @@ class Player
         $this->village = new Village($this->data,$info['village']);
     }
 
-    public function setPlayerData(){
-        $data = 1;
 
-    }
 
 
 

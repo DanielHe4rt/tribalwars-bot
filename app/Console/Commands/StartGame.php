@@ -43,20 +43,22 @@ class StartGame extends Command
 
         $service = new TWService();
 
-        if(!$service->login($username,$password)){
+        if (!$service->login($username, $password)) {
             $this->warn('Your credentials are incorrect. Please restart the aplication.');
             die();
         }
         $worlds = $service->getWorlds();
         $worldsLabel = [];
-        foreach($worlds as $world){
+        foreach ($worlds as $world) {
             $worldsLabel[] = $world['id'] . ($world['playable'] ? " JOIN" : " NEW");
         }
 
-        $data = $this->choice('Select one World',$worldsLabel);
+        $data = $this->choice('Select one World', $worldsLabel);
 
-        $world = explode(' ',$data)[0];
+        $world = explode(' ', $data)[0];
         $service->setWorld($world);
+
+
         $gameOn = true;
         while ($gameOn) {
 
@@ -78,7 +80,7 @@ class StartGame extends Command
             );
 
             $this->table(
-                ['wood', 'stone', 'iron', 'population','storageFull'],
+                ['wood', 'stone', 'iron', 'population', 'storageFull'],
                 [
                     [
                         'wood' => $player->village->wood . " (" . round($player->village->woodProd * 60 * 60) . " / min)",
@@ -95,7 +97,7 @@ class StartGame extends Command
                 $player->village->getBuildings()
             );
             $menuCommand = $this->choice('What you want to do?', ['Build -> Upgrade your buildings', 'Recruit -> Recruit any type of Unitys', 'Forge -> Create or upgrade your Units', 'Refresh -> Refresh the game', 'Exit -> Leave the Session'], 0);
-            $option = explode(' ',$menuCommand)[0];
+            $option = explode(' ', $menuCommand)[0];
 
             switch ($option) {
                 case Choices::BUILD:
@@ -139,17 +141,25 @@ class StartGame extends Command
         $data[] = "Back";
 
         $buildCmd = $this->choice('What you want to build?', $data);
-        if($buildCmd == "Back"){
+        if ($buildCmd == "Back") {
             return true;
         }
-        $option = explode(' ' ,$buildCmd)[0];
-        $player->village->build($option);
+        $option = explode(' ', $buildCmd)[0];
+        $data = $player->village->build($option);
+
         $this->info("The build '" . $option . "' is on the queue. ");
+
+        if(array_key_exists('error',$data)){
+            foreach($data['error'] as $value){
+                $this->error($value);
+            }
+        }
         $this->info("Refreshing...");
         sleep(2);
     }
 
-    public function recruitOptions(Player $player){
-        $player->village->recruit('spear',1);
+    public function recruitOptions(Player $player)
+    {
+        $player->village->recruit('axe', 5);
     }
 }

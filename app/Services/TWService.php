@@ -23,6 +23,8 @@ class TWService
 
     public $world;
 
+    public $brAuth;
+
     public function __construct()
     {
 
@@ -30,7 +32,9 @@ class TWService
         $this->client = new Client([
             // Base URI is used with relative requests
             // You can set any number of default request options.
+            'cookies' => true,
             'timeout' => 5.0,
+            'allow_redirects' => false,
             'headers' => [
                 'TribalWars-Ajax' => 1,
                 'X-Requested-With' => 'XMLHttpRequest',
@@ -57,19 +61,21 @@ class TWService
 
     public function queueBuilding(string $build)
     {
-        $uri = $uri = "https://" . $this->world . ".tribalwars.com.br" . "screen=main&ajaxaction=upgrade_building&id=" . $build . "&type=main&h=" . $this->postKey;
+        $uri = "https://" . $this->world . ".tribalwars.com.br" . $this->gameUri . "screen=main&ajaxaction=upgrade_building&id=" . $build . "&type=main&h=" . $this->postKey;
 
         $response = $this->client->request('POST', $uri);
+
 
         return json_decode($response->getBody(), true);
     }
 
     public function getBuildingsInformations()
     {
-        $uri = $uri = "https://" . $this->world . ".tribalwars.com.br" . "screen=main&action=cancel&id=1&type=main&h=" . $this->postKey;
+        $uri = $uri = "https://" . $this->world . ".tribalwars.com.br" . $this->gameUri . "screen=main&action=cancel&id=1&type=main&h=" . $this->postKey;
 
         $response = $this->client->request('POST', $uri);
         $data = $response->getBody();
+
         $data = explode('BuildingMain.buildings = ', $data);
         $data = explode('</script>', $data[1])[0];
         $data = substr($data, 0, -2);
@@ -77,9 +83,7 @@ class TWService
 
         $data = json_decode($data, true);
         $buildings = [];
-        $buildingsIds = [
-            'Main', 'Barracks', 'Church', 'Blacksmith', 'Square', 'Statue', 'Market', 'Wood', 'Stone', 'Iron', 'Farm', 'Storage', 'Hide', 'Wall'
-        ];
+
         foreach ($data as $key => $building) {
             $buildings[$key]['id'] = $building['id'];
             $buildings[$key]['level'] = $building['level'];
@@ -101,7 +105,7 @@ class TWService
 
     public function queueUnits(string $unitType, int $quantity)
     {
-        $uri = $uri = "https://" . $this->world . ".tribalwars.com.br" . "screen=barracks&ajaxaction=train&mode=train&h=" . $this->postKey;
+        $uri = $uri = "https://" . $this->world . ".tribalwars.com.br" . $this->gameUri . "screen=barracks&ajaxaction=train&mode=train&h=" . $this->postKey;
         $response = $this->client->request('POST', $uri, [
             'form_params' => [
                 sprintf('units[%s]', $unitType) => $quantity
@@ -112,9 +116,49 @@ class TWService
 
     }
 
+    public function getQueueBuilds()
+    {
+        $uri = $uri = "https://" . $this->world . ".tribalwars.com.br" . $this->gameUri . "screen=main";
+        $response = $this->client->request('GET', $uri);
+
+        $data = $response->getBody();
+
+
+        // Building Queue if exists
+        $queue = [];
+        if (strpos($data, 'id="buildqueue"') !== false) {
+            $data = str_replace(['nowrap'], '', $data);
+            $exp = explode('<td class="lit-item">', $data);
+            array_shift($exp);
+
+            foreach ($exp as $key => $value) {
+
+                $queue[] = explode('</td>',$value)[0];
+            }
+        }
+
+
+
+
+        return $data;
+
+    }
+
+    public function getPostkey()
+    {
+        $uri = $uri = "https://" . $this->world . ".tribalwars.com.br" . $this->gameUri . "screen=main";
+        $response = $this->client->request('GET', $uri);
+        $data = $response->getBody();
+
+        preg_match('/(h=)\w+/', $data, $result);
+        $this->postKey = substr($result[0], 2);
+
+        return $data;
+    }
+
     public function getBarracksInformation()
     {
-        $uri = $uri = "https://" . $this->world . ".tribalwars.com.br" . "screen=barracks";
+        $uri = $uri = "https://" . $this->world . ".tribalwars.com.br" . $this->gameUri . "screen=barracks";
         $response = $this->client->request('GET', $uri);
 
         $data = $response->getBody();
@@ -159,7 +203,7 @@ class TWService
         }
 
         $data = $response->getHeaders();
-        $this->cookie = implode(';', $data['Set-Cookie']);
+        //$this->cookie = implode(';', $data['Set-Cookie']);
 
         return true;
     }
@@ -167,11 +211,7 @@ class TWService
     public function getWorlds()
     {
         $uri = "https://www.tribalwars.com.br";
-        $response = $this->client->request('GET', $uri, [
-            'headers' => [
-                'Cookie' => $this->cookie
-            ]
-        ]);
+        $response = $this->client->request('GET', $uri);
         $original = $response->getBody();
 
         $data = explode('<a class="world-select', $original);
@@ -192,7 +232,17 @@ class TWService
 
     public function setWorld(string $world)
     {
-        $this->world = $world;
+        $this->world = strtolower($world);
+
+        $uri = "https://www.tribalwars.com.br/page/play/" . $this->world;
+        $response = $this->client->request("POST", $uri);
+        $data = json_decode($response->getBody(), true);
+
+        $response = $this->client->request("POST", $data['uri']);
+
+        $this->getPostkey();
+        return $response;
+
     }
 
 }
