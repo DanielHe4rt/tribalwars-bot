@@ -36,27 +36,32 @@ class StartGame extends Command
 
     public function handle()
     {
-        $this->info('Welcome to the TribalWars Command Player');
-        $this->info('First we need to log in into your account');
-        $username = $this->ask('Username');
-        $password = $this->secret('Password');
+//        $this->info('Welcome to the TribalWars Command Player');
+//        $this->info('First we need to log in into your account');
+//        $username = $this->ask('Username');
+//        $password = $this->secret('Password');
 
         $service = new TWService();
 
-        if (!$service->login($username, $password)) {
+        if (!$service->login('danielhe4rt1', 'fodase')) {
             $this->warn('Your credentials are incorrect. Please restart the aplication.');
             die();
         }
-        $worlds = $service->getWorlds();
-        $worldsLabel = [];
-        foreach ($worlds as $world) {
-            $worldsLabel[] = $world['id'] . ($world['playable'] ? " JOIN" : " NEW");
-        }
+//        $worlds = $service->getWorlds();
+//        $worldsLabel = [];
+//        foreach ($worlds as $world) {
+//            $worldsLabel[] = $world['id'] . ($world['playable'] ? " JOIN" : " NEW");
+//        }
+//
+//        $data = $this->choice('Select one World', $worldsLabel);
+//
+//        $world = explode(' ', $data)[0];
+        $service->setWorld('br95');
 
-        $data = $this->choice('Select one World', $worldsLabel);
-
-        $world = explode(' ', $data)[0];
-        $service->setWorld($world);
+        $player = new Player($service);
+        dd($player->village->getNearestRaidableVillages());
+        dd($player->calculateCost());
+        dd($service->getMarketRates());
 
 
         $gameOn = true;

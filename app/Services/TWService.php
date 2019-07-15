@@ -16,6 +16,7 @@ class TWService
     public $client;
 
     public $gameUri;
+    public $mapUri;
 
     public $postKey;
 
@@ -29,6 +30,7 @@ class TWService
     {
 
         $this->gameUri = "/game.php?";
+        $this->mapUri = "/map.php?";
         $this->client = new Client([
             // Base URI is used with relative requests
             // You can set any number of default request options.
@@ -133,11 +135,9 @@ class TWService
 
             foreach ($exp as $key => $value) {
 
-                $queue[] = explode('</td>',$value)[0];
+                $queue[] = explode('</td>', $value)[0];
             }
         }
-
-
 
 
         return $data;
@@ -196,16 +196,8 @@ class TWService
                 'password' => $password
             ]
         ]);
-        $data = json_decode($response->getBody(), true);
 
-        if (strpos($response->getBody(), 'error') !== false) {
-            return false;
-        }
-
-        $data = $response->getHeaders();
-        //$this->cookie = implode(';', $data['Set-Cookie']);
-
-        return true;
+        return strpos($response->getBody(), 'error') !== false ? false : true;
     }
 
     public function getWorlds()
@@ -218,7 +210,6 @@ class TWService
         array_shift($data);
         $worlds = [];
         foreach ($data as $key => $value) {
-
             $world = explode('</a>', $value)[0];
             $worldHref = explode(' href="', $world);
             $worldHref = explode('"', $worldHref[1])[0];
@@ -242,6 +233,80 @@ class TWService
 
         $this->getPostkey();
         return $response;
+
+    }
+
+    public function getMarketRates()
+    {
+        $uri = "https://" . $this->world . ".tribalwars.com.br" . $this->gameUri . "4&screen=market&ajax=exchange_data";
+        $response = $this->client->request("GET", $uri);
+        return json_decode($response->getBody(), true);
+    }
+
+    public function getMap(int $x, int $y)
+    {
+        $uri = "https://" . $this->world . ".tribalwars.com.br" . $this->mapUri . "$x" . "_" . $y . "=0";
+
+        $response = $this->client->request("GET", $uri);
+        return json_decode($response->getBody(), true);
+    }
+
+    public function getEnemyVillageCoordinate(int $villageId)
+    {
+        $uri = "https://" . $this->world . ".tribalwars.com.br" . $this->gameUri . "screen=info_village&id=" . $villageId;
+
+        $response = $this->client->request("GET", $uri);
+        $body = $response->getBody();
+        $exp = explode('Coordenadas:</td><td>', $body);
+        $coords = [];
+        if (count($exp) > 0) {
+            $exp = explode('</td></tr>', $exp[1]);
+            $coord = explode('|', $exp[0]);
+            $coords['x'] = $coord[0];
+            $coords['y'] = $coord[1];
+        }
+
+        return $coords;
+    }
+
+    public function attackVillage(int $villageId, array $coord, array $units, $action = "attack")
+    {
+        $uri = "https://" . $this->world . ".tribalwars.com.br" . $this->gameUri . "village=$villageId&screen=place";
+        $formData = [];
+        $response = $this->client->request("GET", $uri);
+        $data =  $response->getBody();
+        preg_match_all('/<input type="hidden" [^>]*? value="(.*)"/', $data, $data);
+        foreach($data[0] as $input){
+            preg_match_all('/"(.*?)"/',$input,$input);
+            foreach($input[0] as $key => $value){
+                $input[0][$key] = str_replace('"','',$value);
+            }
+            $formData[$input[0][1]] = $input[0][2];
+        }
+
+        $formData['spear'] = 5;
+        $formData[$action] = '';
+
+        $formData = array_merge($formData,$coord);
+
+        $uri = "https://" . $this->world . ".tribalwars.com.br" . $this->gameUri . "village=$villageId&screen=place&ajax=confirm";
+        $response = $this->client->request("POST", $uri,[
+            'form_params' => $formData
+        ]);
+        $data = json_decode($response->getBody(),true);
+
+
+        $data = $data['response']['dialog'];
+        preg_match_all('/<input type="hidden" [^>]*? value="(.*)"/',$data,$inputs);
+
+        foreach($inputs[0] as $input){
+            preg_match_all('/"(.*?)"/',$input,$data);
+            foreach($data[0] as $key => $value){
+                $inputs[0][$key] = str_replace('"','',$value);
+            }
+
+        }
+        dd($inputs);
 
     }
 

@@ -44,6 +44,27 @@ class Player
         $this->village = new Village($this->data,$info['village']);
     }
 
+    public function calculateCost($a = 'sell'){
+        $market = $this->data->getMarketRates()['response'];
+        $resouces = [];
+        for($i = 0; $i < 3; $i++){
+            $r = $market['stock']['wood'];
+            $t = $market['capacity']['wood'];
+            $resouces[] = (1 + (0 <= $a ? $market['tax']['buy'] : $market['tax']['sell'])) * ($this->calculateMarginalPrice($market,$r, $t) + $this->calculateMarginalPrice($market,$r - $a, $t)) * $a / 2;
+        }
+
+
+        return $resouces;
+    }
+
+    public function calculateMarginalPrice($market,$e, $a){
+        return $market['constants']['resource_base_price'] - $market['constants']['resource_price_elasticity'] * $e / ($a + $market['constants']['stock_size_modifier']);
+    }
+
+
+
+
+
 
 
 
